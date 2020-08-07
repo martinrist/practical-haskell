@@ -139,6 +139,45 @@
 
 ## Defining Simple Functions
 
+- Function body declarations have a _name_, a list of parameters, separated by
+  spaces, and an `=` sign followed by the function body, e.g.:
+
+    ```haskell
+    firstOrEmpty lst = if not (null list) then head lst else "empty"
+    ```
+
+- Functions are usually preceded by type signatures, e.g.:
+
+    ```haskell
+    firstOrEmpty :: [[Char]] -> [Char]
+    firstOrEmpty lst = if not (null list) then head lst else "empty"
+    ```
+
+- Here are some more examples of simple functions:
+
+    ```haskell
+    (+++) :: [a] -> [a] -> [a]
+    lst1 +++ lst2 = if null lst1
+                       then lst2
+                       else (head lst1) : (tail lst1 ++ lst2)
+
+    reverse2 :: [a] -> [a]
+    reverse2 list = if null list
+                       then []
+                       else reverse2 (tail list) +++ [head list]
+    ```
+
+- To return more than one value from a function, use a _tuple_.  Note that the
+  different components of a tuple can have different types, and that tuples with
+  different numbers of components are different types.
+
+- Haskell uses 'layout'-based syntax, in which all elements in the same block
+  are supposed to start in the same column, e.g.:
+    - In an `if` block, the lines for `then` and `else` must be indented the
+      same way.
+    - In a `let` or `where` block, all local bindings must start at the same
+      level.
+
 
 ## Working with Data Types
 
