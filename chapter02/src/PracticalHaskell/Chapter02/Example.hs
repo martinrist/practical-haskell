@@ -1,0 +1,1 @@
+module PracticalHaskell.Chapter02.Example where
