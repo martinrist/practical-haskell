@@ -181,4 +181,174 @@
 
 ## Working with Data Types
 
+### Algebraic Data Types
+
+- The most basic kind of data type in Haskell is the _algebraic data type_
+  (ADT), defined by two pieces of data:
+    - A name for the type
+    - A set of constructors to create new values.
+
+    ```haskell
+    data Client = GovOrg String
+                | Company String Integer String String
+                | Individual String String Bool
+
+    > :t GovOrg "Nasa"
+    GovOrg "Nasa" :: Client
+
+    > :t Company "MyCorp" 123 "Mrs Smith" "CEO"
+    Company "MyCorp" 123 "Mrs Smith" "CEO" :: Client
+    ```
+
+- To print results, we need an instance of the `Show` typeclass.  Can use
+  Haskell's _automatic deriving_ feature to derive this:
+
+    ```haskell
+    data Client = GovOrg String
+                | Company String Integer String String
+                | Individual String String Bool
+                deriving Show
+
+    > Individual "Sandy" "Smith" False
+    Individual "Sandy" "Smith" False
+    ```
+
+
+### Pattern Matching
+
+- Extracting values from ADTs can be done using _pattern-matching_.  This allows
+  matching against the constructor of the value, and creates bindings to the
+  values encoded inside it.
+
+- Simple patterns look like ADT constructors but with the paramters replaced by
+  bindings:
+
+    ```haskell
+    clientName :: Client -> String
+    clientName client = case client of
+                            GovOrg name -> name
+                            Company name id person resp -> name
+                            Individual person ads ->
+                                case person of
+                                    Person fNm lNm gender -> fNm ++ " " ++ lNm
+    ```
+
+- We can combine the binding for the `Individual` case here:
+
+    ```haskell
+    clientName' :: Client -> String
+    clientName' client = case client of
+                              GovOrg name -> name
+                              Company name id person resp -> name
+                              Individual (Person fNm lNm _) _ -> fNm ++ " " ++ lNm
+    ```
+
+- Incomplete matches give non-exhaustive pattern warnings, and yield an
+  exception at runtime if called.
+
+- Functions like this that are not defined over the whole of the domain of their
+  arguments are called _partial functions_ (as opposed to _total functions_).
+  The `Maybe T` type is designed for cases such as this where a value may not be
+  present:
+
+    ```haskell
+    companyName :: Client -> Maybe String
+    companyName client = case client of
+                            Company name _ _ _ -> Just name
+                            _                  -> Nothing
+    ```
+
+- It's also possible to pattern match directly on `let` and `where` bindings,
+  e.g.:
+
+    ```haskell
+    let Just name = companyName client
+    ```
+
+- Patterns are matched in the order in which they occur.  They do not backtrack
+  when something goes wrong in the body of a match.
+
+- When pattern-matching on the parameter to a function, the pattern can be
+  encoded directly in the function definition, e.g.:
+
+    ```haskell
+    clientName :: Client -> String
+    clientName (GovOrg name)                     = name
+    clientName (Company name _ _ _)              = name
+    clientName (Individual (Person fNm lNm _) _) = fNm ++ " " ++ lNm
+    ```
+
+- Pattern matching on lists can be done using the `:` constructor:
+
+    ```haskell
+    (+++) :: [a] -> [a] -> [a]
+    list1 +++ list2 = case list1 of
+                        []    -> list2
+                        (x:xs) -> x:(xs +++ list2)
+
+    -- or
+
+    (+++) :: [a] -> [a] -> [a]
+    []     +++ list2 = list2
+    (x:xs) +++ list2 = x:(xs +++ list2)
+
+    sorted :: [Integer] -> Bool
+    sorted []       = True
+    sorted [_]      = True
+    sorted (x:y:zs) = x < y && sorted (y:zs)
+    ```
+
+
+### As Patterns
+
+- An _as pattern_ allows you to bind some value in the match, while at the same
+  time allowing matching on inner components, e.g.:
+
+    ```haskell
+    sorted :: [Integer] -> Bool
+    sorted []           = True
+    sorted [_]          = True
+    sorted (x: r@(y:_)) = x < y && sorted r
+    ```
+
+
+### Guards
+
+- _Guards_ allow a pattern to be refined using Boolean conditions that must be
+  fulfilled by the bound values after a successful match, e.g.:
+
+    ```haskell
+    binom :: Integer -> Integer -> Integer
+    binom _ 0 = 1
+    binom x x = 1    -- This doesn't work - can only have one 'x'
+    binom n k = ...
+
+    -- Working version using guards
+    binom _ 0          = 1
+    binom x y | x == y = 1
+    binom n k          = (binom (n-1) (k-1)) + (binom (n-1) k)
+    ```
+
+- Any expression returning a `Boolean` can be used as a guard condition,
+  including `otherwise` as a catch-all clause (`otherwise == True`).
+
+
+### View Patterns
+
+- To look for patterns in a value but in some way that they're not encoded, we
+  need to apply a function before checking the match.  This can be done with
+  _view patterns_, enabled using the `ViewPatterns` language extension:
+
+    ```haskell
+    {-# LANGUAGE ViewPatterns #-}
+
+    responsibility :: Client -> String
+    responsibility (Company _ _ _ r) = r
+    responsibility _ = "Unknown"
+
+    specialClient :: Client -> Bool
+    specialClient (clientName -> "Martin Rist") = True
+    specialClient (responsibility -> "Director") = True
+    specialClient _ = False
+    ```
 
