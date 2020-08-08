@@ -2,6 +2,8 @@
 
 ## Characters, Numbers & Lists
 
+### Characters & Strings
+
 - Character values (of type `Char`) contain one Unicode character.  Character
   literals are created using:
     - Character in single quotes - e.g. `'a'`
@@ -20,6 +22,12 @@
     > :t chr
     chr :: Int -> Char
     ```
+
+- Strings are lists of characters - i.e. they have type `[Char]`.  However,
+  string literals are written as expected - `"like this"`.
+
+
+### Numbers
 
 - Haskell has various numeric types, e.g.:
     - `Int` - bounded integer type, containing values between at least +/-
@@ -44,8 +52,8 @@
     3.4 :: Fractional a => a
     ```
 
-- Strings are lists of characters - i.e. they have type `[Char]`.  However,
-  string literals are written as expected - `"like this"`.
+
+### Lists
 
 - List literals are written with comma-separated values:
 
@@ -94,7 +102,10 @@
     *** Exception: Prelude.tail: empty list
     ```
 
+
 ## Creating a New Project
+
+### Cabal & Stack
 
 - Project can be created with Cabal using `cabal init`, or with Stack using
   `stack new`.
@@ -108,6 +119,18 @@
       libraries, executables and test suites.
     - `package.yaml` - simpler-format file.  Stack uses `hpack` to generate the
       `.cabal` file.
+
+- Stack is focused on having _reproducible builds_, and also manages your
+  Haskell installation for you.  The `stack.yaml` file declares which version of
+  the GHC compiler is targeted, via the resolver.
+
+- Cabal by default uses _Hackage_ for dependencies - a community-maintained
+  repository of packages.  Stack targets _Stackage_ by default, in which
+  specific, mutually compatible versions of packages are grouped as _resolvers_.
+
+
+
+### Modules
 
 - Haskell projects consist of _modules_.  Each module is contained in a
   corresponding file, and the filepath / filename corresponds to the
@@ -127,14 +150,6 @@
 - To tell Cabal to compile a module file, include that module in a stanza, by
   adding it to either `exposed-modules` or `other-modules`.  Stack does this
   automatically.
-
-- Stack is focused on having _reproducible builds_, and also manages your
-  Haskell installation for you.  The `stack.yaml` file declares which version of
-  the GHC compiler is targeted, via the resolver.
-
-- Cabal by default uses _Hackage_ for dependencies - a community-maintained
-  repository of packages.  Stack targets _Stackage_ by default, in which
-  specific, mutually compatible versions of packages are grouped as _resolvers_.
 
 
 ## Defining Simple Functions
@@ -351,4 +366,3 @@
     specialClient (responsibility -> "Director") = True
     specialClient _ = False
     ```
-
