@@ -366,3 +366,190 @@
     specialClient (responsibility -> "Director") = True
     specialClient _ = False
     ```
+
+
+## Records
+
+### Creation & Use
+
+- Records are defined using data declarations, but with `parameter-name ::
+  parameter-type` in place of just types, e.g.:
+
+    ```haskell
+    data ClientR
+      = GovOrgR {clientRName :: String}
+      | CompanyR
+          { clientRName :: String,
+            companyId :: Integer,
+            person :: PersonR,
+            duty :: String
+          }
+      | IndividualR {person :: PersonR}
+      deriving (Show)
+
+    data PersonR = PersonR
+      { firstName :: String,
+        lastName :: String
+      }
+      deriving (Show)
+    ```
+
+- Creating values of record types can be done just with the types, or by
+  specifying field names:
+
+    ```haskell
+    > PersonR "Martin" "Rist"
+    PersonR {firstName = "Martin", lastName = "Rist"}
+
+    > PersonR {firstName = "Martin", lastName = "Rist"}
+    PersonR {firstName = "Martin", lastName = "Rist"}
+    ```
+
+- Field order doesn't matter, but they all need to be provided:
+
+    ```haskell
+    > PersonR {lastName = "Rist", firstName = "Martin"}
+    PersonR {firstName = "Martin", lastName = "Rist"}
+
+    > PersonR {lastName = "Rist"}
+    -- Warning appears, then:
+    PersonR {firstName = "*** Exception: <interactive>:5:1-27: Missing field in record construction firstName
+    ```
+
+- Field names also create accessor functions for their fields:
+
+    ```haskell
+    > :t clientRName
+    clientRName :: ClientR -> String
+
+    > clientRName ( GovOrgR "NATO" }
+    "NATO"
+    ```
+
+- As a result:
+    - Field names can't clash with other field or function names in the same
+      module.
+    - Can use same field name in more than one alternative of data type, but all
+      these fields must have the same type.
+
+
+### Pattern Matching on Field Names
+
+- With non-record types, pattern matches typically include a number of `_`
+  placeholders.  With a record, we can match on `fieldName = pattern` elements
+  in braces, but only need to include the field names that we want to match:
+
+    ```haskell
+    greet :: ClientR -> String
+    greet IndividualR { person = PersonR { firstName = fn } } = "Hi, " ++ fn
+    greet CompanyR { clientRName = c } = "Hi, " ++ c
+    greet GovOrgR { } = "Welcome"
+    ```
+
+
+### Record Puns
+
+- Enabling the `NamedFieldPuns` extension allows us to use _record puns_ to reduce
+  boilerplate.  Here we can replace all instances of `fieldName = fieldName` in
+  bindings with just `fieldName`, e.g.:
+
+    ```haskell
+    {-# LANGUAGE NamedFieldPuns #-}
+
+    greet' :: ClientR -> String
+    greet' IndividualR {person = PersonR {firstName}} = "Hi, " ++ firstName
+    greet' CompanyR {clientRName} = "Hi, " ++ clientRName
+    greet' GovOrgR {} = "Welcome"
+    ```
+
+
+### Record Wildcards
+
+- Enabling the `RecordWildCards` extension allows the use of `..` in a binding
+  to automatically create bindings for all fields that haven't been mentioned in
+  the pattern, e.g.:
+
+    ```haskell
+    {-# LANGUAGE RecordWildCards #-}
+
+    greet'' :: ClientR -> String
+    greet'' IndividualR { person = PersonR { .. } } = "Hi, " ++ firstName
+    greet'' CompanyR { .. } = "Hi, " ++ clientRName
+    greet'' GovOrgR { } = "Welcome"
+    ```
+
+
+### Updating Records
+
+- If `r` is a binding containing a value of record type, then `r { fieldName =
+  newValue }` creates a copy of `r` with the corresponding field changed:
+
+    ```haskell
+    nameInCapitals :: PersonR -> PersonR
+    nameInCapitals p@(PersonR {firstName = initial : rest}) =
+      let newName = (toUpper initial) : rest
+       in p {firstName = newName}
+    nameInCapitals p@(PersonR {firstName = ""}) = p
+    ```
+
+
+### The _Default Values_ Idiom
+
+- Consider the case where a function can take a long list of parameters, but
+  most of the time many of them have default values:
+
+    ```haskell
+    data ConnType = TCP | UDP
+    data UseProxy = NoProxy | Proxy String
+    data TimeOut = NoTimeOut | TimeOut Integer
+    data Connection = Connection String         -- Details elided
+
+    connect :: String -> ConnType -> Integer -> UseProxy
+        -> Bool -> Bool -> TimeOut
+        -> Connection
+    connect url connType speed proxy cache keepAlive timeOut = undefined
+    ```
+
+- Most people might just need sensible defaults for these parameters, so we
+  might define a special helper function for this case:
+
+    ```haskell
+    connectUrl :: String -> Connection
+    connectUrl u = connect u TCP 0 NoProxy False False False NoTimeOut
+    ```
+
+- This has problems:
+    - Adding a new connection parameter breaks callers of `connect`
+    - Changing defaults requires client to assess the impact
+    - Using the library is simple only for the default case.  All other cases
+      require calling the full `connect` function.
+
+- The _Default Values Idiom_ handles this by grouping the configuration
+  parameters into a record and then creating a 'default' value of that type:
+
+    ```haskell
+    data ConnOptions = ConnOptions
+        { connType :: ConnType
+        , connSpeed :: Integer
+        , connProxy :: UseProxy
+        , connCaching :: Bool
+        , connKeepAlive :: Bool
+        , connTimeOut :: TimeOut
+        }
+
+    connect' :: String -> ConnOptions -> Connection
+    connect' url options = ...
+
+    connDefault :: ConnOptions
+    conneDefault = ConnOptions TCP 0 NoProxy False False NoTimeOut
+    ```
+
+- Now callers can call `connect'` using either default or customised options as:
+
+    ```haskell
+    > connect' "http://www.example.com" conneDefault
+    ...
+
+    > connect' "http://www.example.com" connDefault { connType = UDP }
+    ...
+    ```

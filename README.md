@@ -2,7 +2,7 @@
 
 ## Part I: First Steps
 
-- [ ] [Chapter 2 - Declaring the Data Model](chapter02/README.md)
+- [x] [Chapter 2 - Declaring the Data Model](chapter02/README.md)
 - [ ] Chapter 3 - Increasing Code Reuse
 - [ ] Chapter 4 - Using Containers & Type Classes
 - [ ] Chapter 5 - Laziness & Infinite Structures
