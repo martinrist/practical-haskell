@@ -164,3 +164,218 @@
     flip :: (a -> b -> c) -> (b -> a -> c)
     flip f = \x y -> f y z
     ```
+
+
+## More about Modules
+
+### Module imports
+
+- Module imports allow definitions from one module to be used in another.
+
+- The most basic way to import a module brings into scope all the definitions
+  and makes them available for use as if they were declared in the importing
+  module:
+
+    ```haskell
+    module PracticalHaskell.Chapter03.MoreModules where
+
+    import Data.List
+
+    permutationsStartingWith :: Char -> String -> [String]
+    permutationsStartingWith letter
+        = filter (\l -> head l == letter) . permutations
+    ```
+
+- To prevent name clashes, we can selectively import only certain definitions:
+
+    ```haskell
+    module PracticalHaskell.Chapter03.MoreModules where
+
+    import Data.List (permutations, subsequence)
+
+    -- remaining definitions unchanged
+    ```
+
+- Or we can import everything except specified definitions:
+
+    ```haskell
+    module PracticalHaskell.Chapter03.MoreModules where
+
+    import Data.List hiding (head, tail)
+
+    -- remaining definitions unchanged
+    ```
+
+- ADTs have two pieces of information, the type and its constructors, so imports
+  are specified using `Type(ListOfConstructors)`:
+
+    ```haskell
+    module PracticalHaskell.Chapter03.MoreModules where
+
+    import DataTypes (Client())                   -- only type, no constructors
+    import DataTypes (Client(GovOrg, Individual)) -- only specified constructors
+    import DataTypes (Client(..))                 -- all constructors
+    ```
+
+- _Qualified imports_ require prefixing the function with its full module name
+  when used:
+
+    ```haskell
+    module PracticalHaskell.Chapter03.MoreModules where
+
+    import qualified Data.List (filter, permutations)
+
+    permutationsStartingWith :: Char -> String -> [String]
+    permutationsStartingWith letter
+        = Data.List.filter (\l -> head l == letter) . Data.List.permutations
+    ```
+
+- With qualified imports, the package name can be shortened:
+
+    ```haskell
+    module PracticalHaskell.Chapter03.MoreModules where
+
+    import qualified Data.List as L
+
+    permutationsStartingWith :: Char -> String -> [String]
+    permutationsStartingWith letter
+        = L.filter (\l -> head l == letter) . L.permutations
+    ```
+
+
+### Smart Constructors & Views
+
+- As well as controlling which othe rmodules to _import_, it's possible to
+  control which declarations in the current module are _exported_, by adding the
+  export list as part of the `module` declaration:
+
+    ```haskell
+    module M (f) where
+
+    f = ...
+    g = ...
+    ```
+
+- With data types, there are several options for exporting, as for importing:
+    - Just the type, not the constructor - thereby disallowing creation of
+      values using the constructor.
+    - The type and some subset of constructors.
+    - The type and all its constructors.
+
+- When discussing the [_default values
+  idiom_](../chapter02/README.md#the-default-values-idiom) previously, there was
+  no way to restrict the creation of `ConnOptions` values using the constructor.
+  Now we can export only the datatype:
+
+    ```haskell
+    module PracticalHaskell.Chapter02.Records (ConnOptinos(), connDefault) where
+
+    -- Remaining declarations unchanged
+    ```
+
+- This introduces the idea of _smart constructors_.  Consider a `Range` type
+  representing a closed integer range between `a` and `b`, with the invariant `a
+  <= b`:
+
+    ```haskell
+    data Range = Range Integer Integer deriving Show
+    ```
+
+- This won't prevent us creating invalid ranges:
+
+    ```haskell
+    > Range 10 5
+    Range 10 5
+    ```
+
+- As an alternative, we create a _smart constructor_ function `range` that
+  performs the check:
+
+    ```haskell
+    range :: Integer -> Integer -> Range
+    range a b = if a <= b
+                   then Range a b
+                   else error "a must be <= b"
+
+    > range 5 10
+    Range 5 10
+
+    > range 10 5
+    *** Exception: a must be <= b
+    ```
+
+- Then we just export the `Range` type without constructors, and the smart
+  constructor:
+
+    ```haskell
+    module PracticalHaskell.Chapter03.Ranges (Range(), range) where
+
+    -- Remaining definitions
+    ```
+
+- However, code in other modules that attempts to pattern match on the `Range`
+  constructor won't compile:
+
+    ```haskell
+    module PracticalHaskell.Chapter03.RangesClient where
+
+    import PracticalHaskell.Chapter03.Ranges
+
+    -- This function won't compile because `Range` is inaccessible
+    -- prettyRange :: Range -> String
+    -- prettyRange (Range a b) = "[" ++ show a ++ ", " ++ show b ++ "]"
+    ```
+
+- The solution is to create a new data type encoding the observed values of that
+  type and use views when pattern matching:
+
+    ```haskell
+    module PracticalHaskell.Chapter03.Ranges
+        (Range(), range, RangeObs(..), r) where
+
+    -- Other definitions for `Range` and `range` unchanged
+
+    data RangeObs = R Integer Integer deriving Show
+
+    -- This will be used in the view pattern
+    r :: Range -> RangeObs
+    r (Range a b) = R a b
+    ```
+
+    ```haskell
+    {-# LANGUAGE ViewPatterns #-}
+
+    module PracticalHaskell.Chapter03.RangesClient where
+
+    import PracticalHaskell.Chapter03.Ranges
+
+    prettyRange :: Range -> String
+    prettyRange rng = case rng of
+                           (r -> R a b) -> "[" ++ show a ++ ", " ++ show b ++ "]"
+    ```
+
+- We can use a _pattern synonym_ to encapsulate this packaging and unpackaging
+  of `Range` values so that our consumer doesn't need to be aware of its
+  implementation:
+
+    ```haskell
+    {-# LANGUAGE PatternSynonyms #-}
+
+    module PracticalHaskell.Chapter03.RangesSynonyms
+        (Range(), range, pattern R) where
+
+    -- Other definitions for `Range` and `range` unchanged
+
+    pattern R :: Integer -> Integer -> Range
+    pattern R a b <- Range a b
+      where R a b = range a b
+    ```
+
+    ```haskell
+    module PracticalHaskell.Chapter03.RangesSynonymsClient where
+
+    import PracticalHaskell.Chapter03.RangesSynonyms
+
+    prettyRange :: Range -> String
+    prettyRange (R a b) = "[" ++ show a ++ ", " ++ show b ++ "]"
+    ```
