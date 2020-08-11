@@ -1,0 +1,13 @@
+cradle:
+  stack:
+    - path: "./src"
+      component: "chapter03:lib"
+
+    - path: "./app/Main.hs"
+      component: "chapter03:exe:chapter03-exe"
+
+    - path: "./app/Paths_chapter03.hs"
+      component: "chapter03:exe:chapter03-exe"
+
+    - path: "./test"
+      component: "chapter03:test:chapter03-test"
