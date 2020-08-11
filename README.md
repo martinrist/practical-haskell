@@ -30,3 +30,20 @@
 - [ ] Chapter 15 - Documenting, Testing & Verifying
 - [ ] Chapter 16 - Architecting Your Application
 - [ ] Chapter 17 - Looking Further
+
+
+# Creating Chapter Projects
+
+To create a new project for `chapter<n>`:
+
+- Create a new empty project - `stack new chapter<n>`.
+- Review the new `stack.yaml` file and make sure it's using a resolver that is
+  consistent with the remaining chapters.
+- Review the project metadata in `chapter<n>/package.yaml`.
+- Remove the `Setup.hs` file.
+- Generate the `hie.yaml` file - `gen-hie > hie.yaml`
+- Test the new project setup:
+    - `stack test`
+    - `haskell-language-server-wrapper`
+- Create blank `chapter<n>/README.md` file and update link in main `README.md` file.
+- Commit files to Git.
