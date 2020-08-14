@@ -671,3 +671,50 @@
     - `then f by e` - transforms the list - e.g. `then sortWith by x`
     - `then group by e using f` - applies grouping - e.g. `then group by p using
       groupWith`
+
+- The `ParallelListComp` extension enables multiple qualifier branches, which
+  are traversed in parallel:
+
+    ```haskell
+    > [ x*y | x <- [1, 2, 3], y <- [1, 2, 3] ]
+    [1,2,3,2,4,6,3,6,9]
+
+    > [ x*y | x <- [1, 2, 3] | y <- [1, 2, 3] ]
+    [1,4,9]
+    ```
+
+
+## Haskell Origami
+
+- Folds are very powerful - almost all list functions can be written using
+  `foldr`, e.g.:
+
+    ```haskell
+    filterAsFold :: (a -> Bool) -> [a] -> [a]
+    filterAsFold p = foldr (\x l -> if p x then x : l else l) []
+
+    mapAsFold :: (a -> b) -> [a] -> [b]
+    mapAsFold f = foldr (\x l -> f x : l) []
+    ```
+
+- The dual of _folds_ are _unfolds_, which create lists out of seed values:
+
+    ```haskell
+    > import Data.List
+    > :t unfoldr
+    unfoldr :: (b -> Maybe (a, b)) -> b -> [a]
+    ```
+
+- The algorithm is:
+    - Start with a seed of type `b`
+    - Apply the function `b -> Maybe (a, b)`
+    - `Nothing` signals the `unfoldr` should stop producing elements
+    - `Just (x, s)` attaches `x` to the new list and continues with `s` as the
+      new seed.
+
+- Example of generating a list from `n` to `m`:
+
+    ```haskell
+    enumUnfold :: Int -> Int -> [Int]
+    enumUnfold n m = unfoldr (\x -> if x > m then Nothing else Just (x, x+1)) n
+    ```
