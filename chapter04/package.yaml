@@ -24,6 +24,8 @@ dependencies:
 
 library:
   source-dirs: src
+  dependencies:
+  - containers
 
 executables:
   chapter04-exe:
@@ -35,6 +37,8 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - chapter04
+    - containers
+    - persistent
 
 tests:
   chapter04-test:
