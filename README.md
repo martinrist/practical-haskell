@@ -4,7 +4,7 @@
 
 - [x] [Chapter 2 - Declaring the Data Model](chapter02/README.md)
 - [x] [Chapter 3 - Increasing Code Reuse](chapter03/README.md)
-- [ ] Chapter 4 - Using Containers & Type Classes
+- [ ] [Chapter 4 - Using Containers & Type Classes](chapter04/README.md)
 - [ ] Chapter 5 - Laziness & Infinite Structures
 
 ## Part II: Data Mining
