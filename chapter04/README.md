@@ -152,3 +152,90 @@
     > :t M.mapWithKey
     M.mapWithKey :: (k -> a -> b) -> M.Map k a -> M.Map k b
     ```
+
+
+### Sets
+
+- Sets are found in the `Data.Set` module, which contains functions very similar
+  to those in `Data.Map`, but without the `k` parameter.
+
+- Sets enforce uniqueness of value:
+
+    ```haskell
+    > S.insert 4 $ S.singleton 4
+    fromList [4]
+    ```
+
+- The `containers` library also provides `IntMap` and `IntSet`, which are
+  higher-performance versions of `Map` and `Set` that use integer keys / elements.
+
+- The `unordered-containers` library also provides `HashMap` and `HashSet`
+  variants where the keys / elements are hashable to an `Int`.
+
+
+### Trees
+
+- _Trees_ are composed of _nodes_ which hold a value and have other trees as
+  children.  They are found in the `Data.Tree` module, defined as:
+
+    ```haskell
+    data Tree   a = Node { rootLabel :: a, subForest :: Forest a }
+    type Forest a = [Tree a]
+    ```
+
+- Other algorithms may require the use of other more specialised types of trees,
+  and there are other packages for those.
+
+- There are various ways to traverse a tree structure:
+    - _Depth first, pre-order_ - each node recursively visits subtrees.  Node is
+      visited _before_ subtrees.
+    - _Depth first, post-order_ - as above, but node is visited _after_
+      subtrees.
+    - _Breadth-first_ - all nodes at a given level are visited in order before
+      going down to the next level.
+
+- Example of how to do pre-order traversal:
+
+    ```haskell
+    preOrder :: (a -> b) -> Tree a -> [b]
+    preOrder f (Node v subtrees)
+        = let subtreesTraversed = concat $ map (preOrder f) subtrees
+              in f v : subtreesTraversed
+    ```
+
+- Pre-order traversal can be done using `Data.Tree.flatten`, and breadth-first
+  using `Data.Tree.levels`.
+
+- `Tree`s support mapping and folding, but unlike `Map`s and `Set`s this is via
+  `fmap` in `Prelude` and `foldr` in `Data.Foldable`.
+
+
+### Graphs
+
+- _Graphs_ are composed of sets of vertices, joined by edges.  In the
+  implementation in `Data.Graph`, nodes are identified by an `Int` and edges are
+  _directed_ and without weight.
+
+- One way to create a graph is using `graphFromEdges`, which takes a list of
+  triples `(value, key, [key])`, where the third part is a list of neighbours of
+  the node with key `key`.  Gives you back:
+    - A `Graph`.
+    - A function `Vertex -> (node, key, [key])` which maps a vertex identifier
+      to the node information.
+    - A function `key -> Maybe Vertex` which maps keys to vertex identifiers.
+
+- Another way is to use `buildG` which takes a tuple with the minimum and
+  maximum identifiers (the _bounds_) amd a list of _edges_ (tuples from vertex
+  to vertex).
+
+- A _topological sort_ (`topSort`) of a graph gives a list of the vertices in
+  the order that they need to be carried out to preserve the dependencies.
+
+- Given a `Graph` and two vertices, we can find out whether there is a path from
+  the first to the second, by using `path`.  You can also determine the other
+  vertices that can be reached from a given vertex using `reachable`.
+
+- `Data.Graph` contains other functions that implement common graph algorithms,
+  e.g.:
+    - `scc` - strongly-connected components.
+    - `components` - connected components.
