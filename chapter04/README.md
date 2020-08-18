@@ -239,3 +239,147 @@
   e.g.:
     - `scc` - strongly-connected components.
     - `components` - connected components.
+
+
+## Ad-Hoc Polymorphism: Type Classes
+
+### Type Class Constraints
+
+- Consider the type signature of `Data.Map.insert` - it has an `Ord k`
+  constraint before the `=>`:
+
+    ```haskell
+    > import qualified Data.Map as M
+    > :t M.insert
+    M.insert :: Ord k => k -> a -> Map k a -> Map k a
+    ```
+
+- `Ord k` constrains the set of possible types that the type variable `k` can
+  take.  Here we ask the type to be accomanied by some functions.  This is
+  called _ad-hoc polymorphism_, in contrast to the _parametric polymorphism_ we
+  saw in `[a]`.
+
+
+### Declaring Type Classes
+
+- A _type class_ is a declaration of functions with the following syntax:
+
+    ```haskell
+    class ClassName variable where
+        oneFunction   :: oneType
+        ...
+        otherFunction :: otherType
+    ```
+
+- For example, a type class that expresses the concept of things that have a
+  name:
+
+    ```haskell
+    class Nameable n where
+        name :: n -> String
+
+    > :t name
+    name :: Nameable n => n -> String
+    ```
+
+- Functions can specify the constraint and use the functions declared in the
+  type class:
+
+    ```haskell
+    initial :: Nameable n => n -> Char
+    inital n = head (name n)
+    ```
+
+- The `Ord` type class has `Eq` as a superclass, so for a data type to have an
+  instance of `Ord`, it must also have an instance of `Eq`:
+
+    ```haskell
+    class Eq a => Ord a where
+        compare              :: a -> a -> Ordering
+        (<), (<=), (>), (>=) :: a -> a -> Bool
+        max, min             :: a -> a -> a
+    ...
+    ```
+
+
+### Instantiating Type Classes
+
+- To define the implementation of a type class for a given type, we create an
+  _instance_:
+
+    ```haskell
+    instance ClassName type where
+        oneFunction   = -- implementation
+        otherFunction = -- implementation
+    ```
+
+- Haskell can automatically write instances of some type classes using a
+  `deriving` mechanism, e.g.:
+
+    ```haskell
+    data Client = GovOrg String | Company String String
+        deriving (Eq, Ord, Show)
+    ```
+
+- We can also specify another constraint, e.g. an instance of `Eq` for `[a]`
+  based on the `Eq` instance for `a`:
+
+    ```haskell
+    instance Eq a => Eq [a] where
+        []     == []     = True
+        (x:xs) == (y:ys) = x == y && xs = ys
+        _      == _      = False
+    ```
+
+
+### Built-in Type Classes
+
+- `Eq` is the type class declaring that a type supports checking of equality and
+  inequality:
+
+    ```haskell
+    > :info Eq
+    class Eq a where
+      (==) :: a -> a -> Bool
+      (/=) :: a -> a -> Bool
+      {-# MINIMAL (==) | (/=) #-}
+    ```
+
+- The default definition of `Eq` is:
+
+    ```haskell
+    class Eq a where
+        (==), (/=) :: a -> a -> Bool
+        x /= y = not (x == y)
+        x == y = not (x /= y)
+    ```
+
+- The above definition for `Eq` gives _default definitions_ - implementing
+  `(==)` will give a definition for `(/=)` automatically.  When creating an
+  instance, you can leave out functions that have a defulat implementation.
+
+- In order to avoid a circular definition where `(==)` and `(/=)` refer to each
+  other, the `Eq` type class specifies a _minimal complete definition_.
+
+
+### Number-related Type Classes
+
+- `Num` - basic number type, supporting additino, subtraction, multiplication,
+  unary negation (`negate`), absolute value (`abs`), sign (`signum`) and
+  conversion from an `Integer` value (`fromInteger`)
+
+- `Real` (subclass of `Num`) - supports conversion to `Rational` values
+  (`toRational`).
+
+- `Integral` (subclass of `Real`) - subclass that supports integer division and
+  modulus - `div` / `mod` / `divMod` and `quot` / `rem` / `quotRem`.
+
+- `Fractional` (subclass of `Num`) - subclass for fractional values that support
+  division (`/`), taking reciprocals (`recip`) and conversion from a `Rational`
+  value (`fromRational`).
+
+- `Floating` (subclass of `Fractional`) - floating point values.  Supports
+  values such as `pi` / `e`.  Allows for square roots (`sqrt`), logarithms
+  (`log`), exponentiation (`exp`) and trig functions.
+
+
